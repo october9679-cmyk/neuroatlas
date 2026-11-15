@@ -1,0 +1,38 @@
+name: Publish NeuroAtlas
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Prepare the atlas and course pages
+        run: |
+          unzip -q chapters-14-17.zip -d site
+          unzip -q chapters-18-20.zip -d site
+          test -s site/index.html
+          test -s site/assets/data.js
+          test "$(find site/assets/pages -type f -name '*.webp' | wc -l)" -eq 306
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Publish site
+        id: deployment
+        uses: actions/deploy-pages@v4
